@@ -30,11 +30,11 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$token = JWTAuth::attempt($validator->validated())) {
-            return $this->errorResponse(401, 'Invalid email or password');
+            return $this->successResponse(null,false, 'Invalid email or password');
         }
 
         if (!$user->is_active) {
-            return $this->errorResponse(403, 'Account is inactive. Please contact support.');
+            return $this->successResponse(null,false, 'Account is inactive. Please contact support.');
         }
 
         return $this->createNewToken($token);

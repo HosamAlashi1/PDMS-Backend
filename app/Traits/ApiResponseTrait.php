@@ -5,13 +5,13 @@ use Illuminate\Support\Facades\Auth;
 trait ApiResponseTrait
 {
 
-    public function successResponse($data, $status = 200, $message = 'success')
+    public function successResponse($data, $success = true, $message = 'msg')
     {
         return response()->json([
             'data' => $data,
-            'status' => $status,
+            'success' => $success,
             'message' => $message,
-        ], $status);
+        ], 200);
     }
 
     /**
@@ -25,7 +25,7 @@ trait ApiResponseTrait
     {
         return response()->json([
             'data' => null,
-            'status' => $status,
+            'success' => false,
             'message' => $message,
         ], $status);
     }
@@ -43,7 +43,7 @@ trait ApiResponseTrait
         return $this->successResponse([
             'access_token' => $token,
             'user' => auth()->user(),
-        ], 200);
+        ], true);
     }
 
 

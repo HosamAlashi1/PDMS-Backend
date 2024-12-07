@@ -94,7 +94,7 @@ class HostController extends Controller
                 'insert_user_name' => auth()->user()->name,
             ]);
 
-            return $this->successResponse($host, 201, "{$host->hostname} has been added successfully.");
+            return $this->successResponse($host, true, "{$host->hostname} has been added successfully.");
         } catch (\Exception $ex) {
             return $this->errorResponse(400, $ex->getMessage());
         }
@@ -106,7 +106,7 @@ class HostController extends Controller
         try {
             $host = Hosts::find($id);
             if (!$host) {
-                return $this->errorResponse(404, "Host not found.");
+                return $this->successResponse(null,false, "Host not found.");
             }
 
             $host->update([
@@ -118,7 +118,7 @@ class HostController extends Controller
                 'group_title' => $request->input('group_title'),
             ]);
 
-            return $this->successResponse($host, 200, "{$host->hostname} has been updated successfully.");
+            return $this->successResponse($host, true, "{$host->hostname} has been updated successfully.");
         } catch (\Exception $ex) {
             return $this->errorResponse(400, $ex->getMessage());
         }
@@ -129,12 +129,12 @@ class HostController extends Controller
         try {
             $host = Hosts::find($id);
             if (!$host) {
-                return $this->errorResponse(404, "Host not found.");
+                return $this->successResponse(null,false, "Host not found.");
             }
 
             $host->delete();
 
-            return $this->successResponse(null, 200, "{$host->hostname} has been deleted successfully.");
+            return $this->successResponse(null, true, "{$host->hostname} has been deleted successfully.");
         } catch (\Exception $ex) {
             return $this->errorResponse(400, $ex->getMessage());
         }
@@ -149,7 +149,7 @@ class HostController extends Controller
 
             Excel::import(new HostsImport($groupID, $groupTitle), $file);
 
-            return $this->successResponse(null, 201, "File has been imported successfully.");
+            return $this->successResponse(null, true, "File has been imported successfully.");
         } catch (\Exception $ex) {
             return $this->errorResponse(400, $ex->getMessage());
         }

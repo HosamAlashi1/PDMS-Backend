@@ -35,7 +35,7 @@ class AdminController extends Controller
             'total_pages' => $totalPages,
             'size' => $size,
             'total_count' => $totalAdmins,
-        ], 200, 'Admins fetched successfully');
+        ], true, 'Admins fetched successfully');
     }
 
 
@@ -51,7 +51,7 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->errorResponse(422, $validator->errors());
+            return $this->successResponse(null,false, $validator->errors());
         }
 
         // Image upload logic
@@ -71,7 +71,7 @@ class AdminController extends Controller
 
         return $this->successResponse([
             'admin' => $admin,
-        ], 201, 'Admin created successfully');
+        ], true, 'Admin created successfully');
     }
 
     public function activate($id, Request $request)
@@ -79,7 +79,7 @@ class AdminController extends Controller
         try {
             $admin = User::find($id);
             if (!$admin) {
-                return $this->errorResponse(404, 'Admin not found');
+                return $this->successResponse(null,false, 'Admin not found');
             }
 
             // Cast the value to an integer
@@ -88,7 +88,7 @@ class AdminController extends Controller
             $admin->save();
 
             $message = $admin->is_active ? 'activated' : 'deactivated';
-            return $this->successResponse(null, 200, "$admin->name has been $message successfully");
+            return $this->successResponse(null, true, "$admin->name has been $message successfully");
         } catch (\Exception $ex) {
             return $this->errorResponse(400, 'An error occurred', $ex->getMessage());
         }
@@ -107,13 +107,13 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->errorResponse(422, $validator->errors());
+            return $this->successResponse(null,false, $validator->errors());
         }
 
         $admin = User::find($id);
 
         if (!$admin) {
-            return $this->errorResponse(404, 'Admin not found');
+            return $this->successResponse(null,false, 'Admin not found');
         }
 
         $data = $request->only(['name', 'phone', 'email']);
@@ -134,7 +134,7 @@ class AdminController extends Controller
 
         return $this->successResponse([
             'admin' => $admin,
-        ], 200, 'Admin updated successfully');
+        ], false, 'Admin updated successfully');
     }
 
 
@@ -142,11 +142,11 @@ class AdminController extends Controller
     {
         $admin = User::find($id);
         if (!$admin) {
-            return $this->errorResponse(404, 'Admin not found');
+            return $this->successResponse(null,false, 'Admin not found');
         }
 
         if ($admin->id === auth()->id()) {
-            return $this->errorResponse(403, 'You cannot delete yourself');
+            return $this->successResponse(null,false, 'You cannot delete yourself');
         }
 
         if ($admin->image) {
@@ -155,7 +155,7 @@ class AdminController extends Controller
 
         $admin->delete();
 
-        return $this->successResponse(null, 200, 'Admin deleted successfully');
+        return $this->successResponse(null, true, 'Admin deleted successfully');
     }
 
 

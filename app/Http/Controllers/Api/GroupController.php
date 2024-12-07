@@ -23,7 +23,7 @@ class GroupController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->errorResponse(422, 'Validation errors', $validator->errors());
+            return $this->successResponse(null,false, 'Validation errors', $validator->errors());
         }
 
         try {
@@ -40,7 +40,7 @@ class GroupController extends Controller
                 'insert_date' => now(),
             ]);
 
-            return $this->successResponse($group, 200, 'Group has been added successfully');
+            return $this->successResponse($group, true, 'Group has been added successfully');
         } catch (\Exception $e) {
             return $this->errorResponse(500, 'An error occurred', $e->getMessage());
         }
@@ -66,7 +66,7 @@ class GroupController extends Controller
                 'total_count' => $totalGroups,
             ];
 
-            return $this->successResponse($data, 200, 'Groups fetched successfully');
+            return $this->successResponse($data, true, 'Groups fetched successfully');
         } catch (\Exception $ex) {
             return $this->errorResponse(400, 'An error occurred', $ex->getMessage());
         }
@@ -76,7 +76,7 @@ class GroupController extends Controller
     {
         try {
             $groups = Group::all();
-            return $this->successResponse($groups, 200, 'Data returned successfully');
+            return $this->successResponse($groups, true, 'Data returned successfully');
         } catch (\Exception $ex) {
             return $this->errorResponse(400, 'An error occurred', $ex->getMessage());
         }
@@ -87,7 +87,7 @@ class GroupController extends Controller
         try {
             $group = Group::find($id);
             if (!$group) {
-                return $this->errorResponse(404, 'Group not found');
+                return $this->successResponse(null,false, 'Group not found');
             }
 
             // Cast the value to an integer
@@ -96,7 +96,7 @@ class GroupController extends Controller
             $group->save();
 
             $message = $group->is_active ? 'activated' : 'deactivated';
-            return $this->successResponse(null, 200, "Group has been $message successfully");
+            return $this->successResponse(null, false, "Group has been $message successfully");
         } catch (\Exception $ex) {
             return $this->errorResponse(400, 'An error occurred', $ex->getMessage());
         }
@@ -108,7 +108,7 @@ class GroupController extends Controller
         try {
             $group = Group::find($id);
             if (!$group) {
-                return $this->errorResponse(404, 'Group not found');
+                return $this->successResponse(null,false, 'Group not found');
             }
 
             $validated = $request->validate([
@@ -118,7 +118,7 @@ class GroupController extends Controller
             $group->title = $validated['title'];
             $group->save();
 
-            return $this->successResponse($group, 200, 'Group has been updated successfully');
+            return $this->successResponse($group, true, 'Group has been updated successfully');
         } catch (\Exception $ex) {
             return $this->errorResponse(400, 'An error occurred', $ex->getMessage());
         }
@@ -129,12 +129,12 @@ class GroupController extends Controller
         try {
             $group = Group::find($id);
             if (!$group) {
-                return $this->errorResponse(404, 'Group not found');
+                return $this->successResponse(null,false, 'Group not found');
             }
 
             $group->delete();
 
-            return $this->successResponse(null, 200, 'Group has been deleted successfully');
+            return $this->successResponse(null, true, 'Group has been deleted successfully');
         } catch (\Exception $ex) {
             return $this->errorResponse(400, 'An error occurred', $ex->getMessage());
         }
