@@ -5,19 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Group extends Model
+class Role extends Model
 {
     use HasFactory;
 
-    protected $table = 'groups';
-
     protected $fillable = [
-        'title',
-        'color',
-        'coordinates',
-        'city',
-        'governorate',
-        'is_active',
+        'name',
         'is_delete',
         'insert_user_id',
         'update_user_id',
@@ -25,9 +18,13 @@ class Group extends Model
         'delete_date',
     ];
 
-    public function devices()
+    public function permissions()
     {
-        return $this->hasMany(Device::class);
+        return $this->belongsToMany(Permission::class, 'role_permissions', 'role_id', 'permission_id');
     }
 
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }

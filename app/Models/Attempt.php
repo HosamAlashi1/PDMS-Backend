@@ -12,11 +12,17 @@ class Attempt extends Model
     protected $table = 'attempts';
 
     protected $fillable = [
-        'hostname',
-        'host_ip',
+        'ip_address',
         'status',
-        'is_mail_sent',
+        'response_time',
+        'is_alert_sent',
+        'alert_sent_date',
         'examination_date',
     ];
+
+    public function device()
+    {
+        return $this->belongsTo(Device::class, 'device_id');
+    }
 
 }

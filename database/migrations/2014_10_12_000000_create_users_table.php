@@ -9,28 +9,36 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('first_name');
+            $table->string('middle_name');
+            $table->string('last_name');
+            $table->string('personal_email');
+            $table->string('company_email');
             $table->string('phone');
-            $table->boolean('is_active')->default(true);
-            $table->string('image')->nullable();
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('address');
             $table->string('password');
-            $table->rememberToken();
+            $table->string('marital_status');
+            $table->string('image')->nullable();
+            $table->unsignedBigInteger('role_id');
+            $table->boolean('receives_emails');
+            $table->timestamp('last_email_sent');
+            $table->integer('email_frequency_hours');
+            $table->boolean('is_logout');
+            $table->boolean('is_active');
+            $table->boolean('is_delete');
+            $table->unsignedBigInteger('insert_user_id')->nullable();
+            $table->unsignedBigInteger('update_user_id')->nullable();
             $table->timestamps();
-            $table->softDeletes(); // Adds the deleted_at column for soft deletes
+            $table->unsignedBigInteger('delete_user_id')->nullable();
+            $table->timestamp('delete_date')->nullable();
         });
     }
 
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('users');
     }

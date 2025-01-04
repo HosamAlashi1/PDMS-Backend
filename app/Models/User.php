@@ -11,7 +11,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use  HasFactory, Notifiable ,SoftDeletes;
+    use  HasFactory, Notifiable ;
 
     /**
      * The attributes that are mass assignable.
@@ -19,15 +19,33 @@ class User extends Authenticatable implements JWTSubject
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'middle_name',
+        'last_name',
+        'personal_email',
+        'company_email',
         'phone',
-        'email',
-        'image',
+        'address',
         'password',
-        'email_verified_at',
+        'marital_status',
+        'image',
+        'role_id',
+        'receives_emails',
+        'last_email_sent',
+        'email_frequency_hours',
+        'is_logout',
+        'is_active',
+        'is_delete',
+        'insert_user_id',
+        'update_user_id',
+        'delete_user_id',
+        'delete_date',
     ];
 
-    protected $dates = ['deleted_at'];
+    protected $hidden = [
+        'password', // Hide sensitive information
+    ];
+
 
     public function getJWTIdentifier() {
         return $this->getKey();
@@ -46,10 +64,6 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var array<int, string>
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
 
     /**
      * The attributes that should be cast.
@@ -68,5 +82,20 @@ class User extends Authenticatable implements JWTSubject
         }
 
         return asset($value);
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function errorLogs()
+    {
+        return $this->hasMany(ErrorLog::class);
+    }
+
+    public function forgets()
+    {
+        return $this->hasMany(Forget::class);
     }
 }

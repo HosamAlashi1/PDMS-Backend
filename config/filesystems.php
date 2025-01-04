@@ -44,6 +44,13 @@ return [
             'throw' => false,
         ],
 
+        'users' => [
+            'driver' => 'local',
+            'root' => public_path('images'),
+            'url' => env('APP_URL').'/storage',
+            'visibility' => 'public',
+        ],
+
         'upload' => [
             'driver' => 'local',
             'root' => public_path('images'),
