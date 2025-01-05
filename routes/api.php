@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\GroupController;
 use App\Http\Controllers\Api\DevicesController;
+use App\Http\Controllers\Api\MapController;
 use App\Http\Controllers\Api\RolesController;
+use App\Http\Controllers\Api\SettingsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
@@ -30,39 +33,22 @@ Route::group([
 
 
 Route::middleware('jwt.verify')->prefix('dashboard')->group(function () {
+    // Dashboard
+    Route::get('statistics', [DashboardController::class, 'statistics']);
+    Route::get('statistics-by-month', [DashboardController::class, 'detailedStatisticsByMonth']);
 
+    // admins
     Route::prefix('users')->group(function () {
-        // List Users
         Route::get('list', [AdminController::class, 'list']);
-
-        // User Details
         Route::get('details/{id}', [AdminController::class, 'details']);
-
-        // User Profile
         Route::get('profile/{id}', [AdminController::class, 'profile']);
-
-        // Add User
         Route::post('add', [AdminController::class, 'add']);
-
-        // Edit User
         Route::post('edit/{id}', [AdminController::class, 'edit']);
-
-        // Edit Profile
         Route::post('edit-profile/{id}', [AdminController::class, 'editProfile']);
-
-        // Activate/Deactivate User
         Route::post('active/{id}', [AdminController::class, 'active']);
-
-        // Delete User
         Route::post('delete/{id}', [AdminController::class, 'delete']);
-
-        // Invite User
         Route::post('invite/{id}', [AdminController::class, 'invite']);
-
-        // Reset Password
         Route::post('reset-password/{id}', [AdminController::class, 'resetPassword']);
-
-        // Refresh User Data
         Route::get('refresh', [AdminController::class, 'refresh']);
     });
 
@@ -87,6 +73,12 @@ Route::middleware('jwt.verify')->prefix('dashboard')->group(function () {
         Route::post('delete/{id}', [RolesController::class, 'delete']);
     });
 
+    Route::prefix('settings')->group(function () {
+        Route::get('list', [SettingsController::class, 'list'])->name('settings.list');
+        Route::post('edit', [SettingsController::class, 'edit'])->name('settings.edit');
+    });
+
+    Route::get('map/list', [MapController::class, 'list']);
 });
 
 

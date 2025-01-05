@@ -125,14 +125,17 @@ class AdminController extends Controller
 
     public function add(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'company_email' => 'required|email|unique:users,company_email',
             'personal_email' => 'required|email|unique:users,personal_email',
             'role_id' => 'required|exists:roles,id',
         ]);
 
-        // Generate a random password
+        if ($validator->fails()) {
+            return $this->successResponse(null, false, "Validation failed. Please ensure all fields are properly filled.");
+        }
+
         $password = $this->generateRandomString(8);
 
         $newUser = User::create([
@@ -143,10 +146,10 @@ class AdminController extends Controller
             'company_email' => $request->company_email,
             'phone' => $request->phone ?? '',
             'address' => $request->address ?? '',
-            'password' => Hash::make($password), // Use the generated password
+            'password' => Hash::make($password),
             'marital_status' => $request->marital_status ?? '',
             'role_id' => $request->role_id,
-            'receives_emails' => filter_var($request->receives_emails, FILTER_VALIDATE_BOOLEAN), // Proper casting
+            'receives_emails' => filter_var($request->receives_emails, FILTER_VALIDATE_BOOLEAN),
             'email_frequency_hours' => $request->email_frequency_hours ?? 0,
             'is_active' => true,
             'is_logout' => false,
@@ -165,10 +168,9 @@ class AdminController extends Controller
         return $this->successResponse(null, true, 'User added successfully.');
     }
 
-
     public function edit(Request $request, $id)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'first_name' => 'nullable|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
@@ -183,6 +185,10 @@ class AdminController extends Controller
             'file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
+        if ($validator->fails()) {
+            return $this->successResponse(null, false, "Validation failed. Please ensure all fields are properly filled.");
+        }
+
         $user = User::where('id', $id)->where('is_delete', false)->first();
 
         if (!$user) {
@@ -193,7 +199,6 @@ class AdminController extends Controller
             return $this->successResponse(null, false, 'This operation is not permitted!');
         }
 
-        // Update fields with old values if not provided
         $user->update([
             'first_name' => $request->input('first_name', $user->first_name),
             'middle_name' => $request->input('middle_name', $user->middle_name),
@@ -210,7 +215,6 @@ class AdminController extends Controller
             'update_date' => now(),
         ]);
 
-        // Handle file upload
         if ($request->hasFile('file')) {
             $filePath = $this->uploadImage('users', $request->file('file'));
             $user->update(['image' => $filePath]);
@@ -221,7 +225,7 @@ class AdminController extends Controller
 
     public function editProfile(Request $request, $id)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'first_name' => 'nullable|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
@@ -230,6 +234,10 @@ class AdminController extends Controller
             'address' => 'nullable|string|max:255',
             'file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        if ($validator->fails()) {
+            return $this->successResponse(null, false, "Validation failed. Please ensure all fields are properly filled.");
+        }
 
         $user = User::where('id', $id)->where('is_delete', false)->first();
 
@@ -252,7 +260,6 @@ class AdminController extends Controller
             'update_date' => now(),
         ]);
 
-        // Handle file upload if provided
         if ($request->hasFile('file')) {
             $filePath = $this->uploadImage('users', $request->file('file'));
             $user->update(['image' => $filePath]);
@@ -272,6 +279,7 @@ class AdminController extends Controller
 
         return $this->successResponse($userData, true, 'Your account updated successfully.');
     }
+
 
     public function invite($id)
     {
@@ -295,10 +303,14 @@ class AdminController extends Controller
 
     public function resetPassword(Request $request, $id)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'new_password' => 'required|string|min:6',
             'confirm_password' => 'required|same:new_password',
         ]);
+
+        if ($validator->fails()) {
+            return $this->successResponse(null, false, "Validation failed. Please ensure the passwords match and meet the minimum length requirement.");
+        }
 
         $user = User::where('id', $id)->where('is_delete', false)->first();
 
@@ -312,7 +324,7 @@ class AdminController extends Controller
 
         $user->update([
             'is_logout' => true,
-            'password' =>Hash::make($request->new_password),
+            'password' => Hash::make($request->new_password),
         ]);
 
         $emailBody = $this->emailTemplateService->passwordChangedTemplate($user->first_name, $user->company_email, $request->new_password);
