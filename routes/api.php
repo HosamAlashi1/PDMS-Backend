@@ -32,7 +32,7 @@ Route::group([
 });
 
 
-Route::middleware('jwt.verify')->prefix('dashboard')->group(function () {
+Route::middleware('jwt.verify')->group(function () {
     // Dashboard
     Route::get('statistics', [DashboardController::class, 'statistics']);
     Route::get('statistics-by-month', [DashboardController::class, 'detailedStatisticsByMonth']);
