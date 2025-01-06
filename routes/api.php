@@ -34,8 +34,8 @@ Route::group([
 
 Route::middleware('jwt.verify')->group(function () {
     // Dashboard
-    Route::get('statistics', [DashboardController::class, 'statistics']);
-    Route::get('statistics-by-month', [DashboardController::class, 'detailedStatisticsByMonth']);
+    Route::get('dashboard/statistics', [DashboardController::class, 'statistics']);
+    Route::get('dashboard/statistics-by-month', [DashboardController::class, 'detailedStatisticsByMonth']);
 
     // admins
     Route::prefix('users')->group(function () {
