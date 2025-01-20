@@ -39,7 +39,7 @@ class AdminController extends Controller
 
     public function list(Request $request)
     {
-        $query = User::query()->where('is_delete', false);
+        $query = User::query()->where('is_delete', 0);
 
         if ($request->has('q')) {
             $query->where(function ($q) use ($request) {
@@ -67,16 +67,22 @@ class AdminController extends Controller
                 'receives_emails' => $user->receives_emails,
                 'email_frequency_hours' => $user->email_frequency_hours,
                 'role' => Role::find($user->role_id)->name ?? null,
-                'image' => $user->image ? asset($user->image) :asset('images/default-user.png'),
+                'image' => $user->image ? asset($user->image) : asset('images/default-user.png'),
             ];
         });
 
-        return $this->successResponse($users, true, 'Data returned successfully.');
+        $response = [
+            'data' => $users->items(),
+            'total_records' => $users->total(),
+            'total_count' => $users->count(),
+        ];
+
+        return $this->successResponse($response, true, 'Data returned successfully.');
     }
 
     public function details($id)
     {
-        $user = User::where('id', $id)->where('is_delete', false)->first();
+        $user = User::where('id', $id)->where('is_delete', 0)->first();
 
         if (!$user) {
             return $this->successResponse(null, false, 'User does not exist!');
@@ -103,7 +109,7 @@ class AdminController extends Controller
 
     public function profile($id)
     {
-        $user = User::where('id', $id)->where('is_delete', false)->first();
+        $user = User::where('id', $id)->where('is_delete', 0)->first();
 
         if (!$user) {
             return $this->successResponse(null, false, 'User does not exist!');
@@ -189,15 +195,15 @@ class AdminController extends Controller
             return $this->successResponse(null, false, "Validation failed. Please ensure all fields are properly filled.");
         }
 
-        $user = User::where('id', $id)->where('is_delete', false)->first();
+        $user = User::where('id', $id)->where('is_delete', 0)->first();
 
         if (!$user) {
             return $this->successResponse(null, false, 'User does not exist!');
         }
 
-        if ($user->id === 1) {
-            return $this->successResponse(null, false, 'This operation is not permitted!');
-        }
+        // if ($user->id === 1) {
+        //     return $this->successResponse(null, false, 'This operation is not permitted!');
+        // }
 
         $user->update([
             'first_name' => $request->input('first_name', $user->first_name),
@@ -239,15 +245,15 @@ class AdminController extends Controller
             return $this->successResponse(null, false, "Validation failed. Please ensure all fields are properly filled.");
         }
 
-        $user = User::where('id', $id)->where('is_delete', false)->first();
+        $user = User::where('id', $id)->where('is_delete', 0)->first();
 
         if (!$user) {
             return $this->successResponse(null, false, 'User does not exist!');
         }
 
-        if ($user->id === 1 && Auth::id() !== 1) {
-            return $this->successResponse(null, false, 'This operation is not permitted!');
-        }
+        // if ($user->id === 1 && Auth::id() !== 1) {
+        //     return $this->successResponse(null, false, 'This operation is not permitted!');
+        // }
 
         $user->update([
             'first_name' => $request->input('first_name', $user->first_name),
@@ -283,15 +289,15 @@ class AdminController extends Controller
 
     public function invite($id)
     {
-        $user = User::where('id', $id)->where('is_delete', false)->first();
+        $user = User::where('id', $id)->where('is_delete', 0)->first();
 
         if (!$user) {
             return $this->successResponse(null, false, 'User does not exist!');
         }
 
-        if ($user->id === 1) {
-            return $this->successResponse(null, false, 'This operation is not permitted!');
-        }
+        // if ($user->id === 1) {
+        //     return $this->successResponse(null, false, 'This operation is not permitted!');
+        // }
 
         $newPassword = Str::random(8);
         $user->update(['password' => Hash::make($newPassword)]);
@@ -312,15 +318,15 @@ class AdminController extends Controller
             return $this->successResponse(null, false, "Validation failed. Please ensure the passwords match and meet the minimum length requirement.");
         }
 
-        $user = User::where('id', $id)->where('is_delete', false)->first();
+        $user = User::where('id', $id)->where('is_delete', 0)->first();
 
         if (!$user) {
             return $this->successResponse(null, false, 'User does not exist!');
         }
 
-        if ($user->id === 1) {
-            return $this->successResponse(null, false, 'This operation is not permitted!');
-        }
+        // if ($user->id === 1) {
+        //     return $this->successResponse(null, false, 'This operation is not permitted!');
+        // }
 
         $user->update([
             'is_logout' => true,
@@ -336,15 +342,15 @@ class AdminController extends Controller
 
     public function active($id)
     {
-        $user = User::where('id', $id)->where('is_delete', false)->first();
+        $user = User::where('id', $id)->where('is_delete', 0)->first();
 
         if (!$user) {
             return $this->successResponse(null, false, 'User does not exist!');
         }
 
-        if ($user->id === 1) {
-            return $this->successResponse(null, false, 'This operation is not permitted!');
-        }
+        // if ($user->id === 1) {
+        //     return $this->successResponse(null, false, 'This operation is not permitted!');
+        // }
 
         $user->update([
             'is_active' => !$user->is_active,
@@ -363,7 +369,7 @@ class AdminController extends Controller
 
     public function delete($id)
     {
-        $user = User::where('id', $id)->where('is_delete', false)->first();
+        $user = User::where('id', $id)->where('is_delete', 0)->first();
 
         if (!$user) {
             return $this->successResponse(null, false, 'User does not exist!');
@@ -375,7 +381,7 @@ class AdminController extends Controller
 
         $user->update([
             'is_logout' => true,
-            'is_delete' => true,
+            'is_delete' => 1,
             'delete_user_id' => Auth::id(),
             'delete_date' => now(),
         ]);
@@ -388,7 +394,7 @@ class AdminController extends Controller
     {
         $user = Auth::guard('api')->user();
 
-        if (!$user || !$user->is_active || $user->is_logout || $user->is_delete) {
+        if (!$user || !$user->is_active || $user->is_logout || $user->is_delete == 1) {
             return $this->successResponse(null, false, 'You have been logged out. Please log in again to continue!');
         }
 

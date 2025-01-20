@@ -63,8 +63,17 @@ class DevicesController extends Controller
             ];
         });
 
-        return $this->successResponse($devices, true, 'Data returned successfully.');
+        $response = [
+            'data' => $devices->items(),
+            'total_records' => $devices->total(),
+            'total_count' => $devices->count(),
+            'current_page' => $devices->currentPage(),
+            'per_page' => $devices->perPage(),
+        ];
+
+        return $this->successResponse($response, true, 'Data returned successfully.');
     }
+
 
     public function add(Request $request)
     {

@@ -41,7 +41,7 @@ class AuthController extends Controller
             return $this->successResponse(null,false, $validator->errors());
         }
 
-        $user = User::where('company_email', $request->email)->where('is_delete', false)->first();
+        $user = User::where('company_email', $request->email)->where('is_delete', 0)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return $this->successResponse(null, false, 'These credentials do not match our records!');
@@ -88,7 +88,7 @@ class AuthController extends Controller
         $user = User::where(function ($query) use ($request) {
             $query->where('personal_email', $request->email)
                 ->orWhere('company_email', $request->email);
-        })->where('is_delete', false)->first();
+        })->where('is_delete', 0)->first();
 
         if (!$user) {
             return $this->successResponse(null, false, 'Email is incorrect!');
@@ -126,7 +126,7 @@ class AuthController extends Controller
             return $this->successResponse(null, false, 'Reset link is invalid!');
         }
 
-        $user = User::where('id', $request->id)->where('is_delete', false)->first();
+        $user = User::where('id', $request->id)->where('is_delete', 0)->first();
         $user->update(['password' => Hash::make($request->password)]);
 
         $forget->update(['is_reset' => true, 'reset_date' => now()]);

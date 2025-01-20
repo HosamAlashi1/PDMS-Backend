@@ -30,26 +30,41 @@ class RolesController extends Controller
         $size = $request->input('size', 10);
         $page = $request->input('page', 1);
 
+        // Build the base query
         $query = Role::where('is_delete', false);
+
+        // Apply search filter if provided
         if (!empty($q)) {
             $query->where('name', 'like', '%' . strtolower($q) . '%');
         }
 
-        $vm = [
-            'total_count' => $query->count(),
-            'data' => $query->skip(($page - 1) * $size)->take($size)->get()->map(function ($role) {
-                return [
-                    'id' => $role->id,
-                    'name' => $role->name,
-                    'insert_user' => User::where('id', $role->insert_user_id)->first(['id', 'first_name', 'last_name', 'image']),
-                    'insert_date' => $role->insert_date,
-                    'update_date' => $role->update_date,
-                    'num_of_members' => User::where('role_id', $role->id)->count(),
-                ];
-            }),
+        // Calculate total count before pagination
+        $totalCount = $query->count();
+
+        // Paginate the results
+        $roles = $query->skip(($page - 1) * $size)->take($size)->get();
+
+        // Map the roles with required details
+        $data = $roles->map(function ($role) {
+            return [
+                'id' => $role->id,
+                'name' => $role->name,
+                'insert_user' => $role->insert_user_id ? User::find($role->insert_user_id, ['id', 'first_name', 'last_name', 'image']) : null,
+                'insert_date' => $role->insert_date,
+                'update_date' => $role->update_date,
+                'num_of_members' => User::where('role_id', $role->id)->count(),
+            ];
+        });
+
+        // Prepare the response
+        $response = [
+            'data' => $data,
+            'total_records' => $totalCount,
+            'current_page' => $page,
+            'per_page' => $size,
         ];
 
-        return $this->successResponse($vm, true, 'Data returned successfully.');
+        return $this->successResponse($response, true, 'Data returned successfully.');
     }
 
     public function details($id)

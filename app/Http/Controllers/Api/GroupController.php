@@ -54,23 +54,34 @@ class GroupController extends Controller
             $page = $request->input('page', 1);
             $skip = ($page - 1) * $size;
 
+            // Fetch paginated groups
             $groups = Group::where('title', 'LIKE', "%$query%")->skip($skip)->take($size)->get();
             $totalGroups = Group::where('title', 'LIKE', "%$query%")->count();
             $totalPages = ceil($totalGroups / $size);
 
-            $data = [
-                'groups' => $groups,
+            $response = [
+                'data' => $groups->map(function ($group) {
+                    return [
+                        'id' => $group->id,
+                        'title' => $group->title,
+                        'description' => $group->description, // Assuming a `description` field exists
+                        'created_at' => $group->created_at,
+                        'updated_at' => $group->updated_at,
+                    ];
+                }),
                 'current_page' => $page,
                 'total_pages' => $totalPages,
                 'size' => $size,
-                'total_count' => $totalGroups,
+                'total_records' => $totalGroups,
+                'total_count' => $groups->count(),
             ];
 
-            return $this->successResponse($data, true, 'Groups fetched successfully');
+            return $this->successResponse($response, true, 'Groups fetched successfully');
         } catch (\Exception $ex) {
             return $this->errorResponse(400, 'An error occurred', $ex->getMessage());
         }
     }
+
 
     public function all()
     {

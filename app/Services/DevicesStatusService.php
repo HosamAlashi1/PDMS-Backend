@@ -2,62 +2,93 @@
 
 namespace App\Services;
 
+use App\Models\Device;
 use App\Models\ErrorLog;
-use App\Models\Setting;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
-class EmailService
+class DevicesStatusService
 {
-    public function send(string $toEmail, string $subject, string $body): bool
+    public function execute(): void
     {
-        try {
-            // Fetch email settings from the database
-            $settings = Setting::pluck('value', 'id');
+        // Retrieve all devices from the database
+        $devices = Device::all();
 
-            // Sender email and name
-            $fromEmail = "t.samara@newsolutions.ps";
-            $fromName = $settings[1] ?? 'Default Sender';
+        // Use parallel processing to handle devices
+        $devices->each(function ($device) {
+            $this->pingWithDynamicTimeout($device);
+        });
+    }
 
-            // SMTP credentials
-            $smtpHost = "smtp.sendgrid.net";
-            $smtpPort = 587;
-            $smtpUsername = "apikey";
-            $smtpPassword = $settings[5] ?? '';
+    private function pingWithDynamicTimeout(Device $device): void
+    {
+        $timeouts = [2000, 3000, 5000, 7000];
+        $finalStatus = 'Unknown';
+        $responseTime = 0;
 
-            // Mail setup
-            $mailConfig = [
-                'transport' => 'smtp',
-                'host' => $smtpHost,
-                'port' => $smtpPort,
-                'encryption' => 'tls',
-                'username' => $smtpUsername,
-                'password' => $smtpPassword,
-            ];
+        foreach ($timeouts as $timeout) {
+            try {
+                $pingResult = $this->ping($device->ip_address, $timeout);
 
-            config(['mail.mailers.smtp' => $mailConfig]);
-
-            // Use Laravel's `html` method to send the email body as HTML
-            Mail::mailer('smtp')->send([], [], function ($message) use ($toEmail, $fromEmail, $fromName, $subject, $body) {
-                $message->from($fromEmail, $fromName)
-                    ->to($toEmail)
-                    ->subject($subject)
-                    ->html($body); // Use the `html` method for the body
-            });
-
-            return true;
-        } catch (\Exception $ex) {
-            // Log the error for debugging purposes
-            ErrorLog::create([
-                'message' => $ex->getMessage(),
-                'stack_trace' => $ex->getTraceAsString(),
-                'http_method' => 'Email Service',
-                'request_path' => 'N/A',
-                'query_params' => 'N/A',
-                'user_id' => 0,
-                'insert_date' => now(),
-            ]);
-
-            return false;
+                if ($pingResult['status'] === 'Success') {
+                    $finalStatus = 'Success';
+                    $responseTime = $pingResult['time'];
+                    break;
+                }
+            } catch (HttpException $e) {
+                $finalStatus = 'TimedOut';
+            }
         }
+
+        // Update device status
+        $this->updateDeviceStatus($device, $finalStatus, $responseTime);
+    }
+
+    private function ping(string $ipAddress, int $timeout): array
+    {
+        // Simulate a ping request (use actual implementation if needed)
+        $startTime = microtime(true);
+        $pingResult = @fsockopen($ipAddress, 80, $errno, $errstr, $timeout / 1000);
+        $endTime = microtime(true);
+
+        if ($pingResult) {
+            fclose($pingResult);
+            return ['status' => 'Success', 'time' => ($endTime - $startTime) * 1000];
+        }
+
+        return ['status' => 'Failed', 'time' => 0];
+    }
+
+    private function updateDeviceStatus(Device $device, string $status, int $responseTime): void
+    {
+        if ($status === 'Success') {
+            $this->handleOnlineDevice($device);
+        } else {
+            $this->handleOfflineDevice($device);
+        }
+
+        $device->response_time = $responseTime;
+        $device->last_examination_date = now();
+
+        $device->save();
+    }
+
+    private function handleOnlineDevice(Device $device): void
+    {
+        $device->online_since = $device->online_since ?? now();
+        $device->offline_since = null;
+        $device->count = 0;
+        $device->status = 'Online';
+    }
+
+    private function handleOfflineDevice(Device $device): void
+    {
+        $device->offline_since = $device->offline_since ?? now();
+        $device->count++;
+
+        $duration = now()->diffInHours($device->offline_since);
+
+        $device->status = $duration >= 24 ? 'OfflineLongTerm' : 'OfflineShortTerm';
     }
 }
