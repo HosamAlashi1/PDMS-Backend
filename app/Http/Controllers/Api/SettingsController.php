@@ -48,7 +48,7 @@ class SettingsController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->successResponse(null, false, "Validation failed. Please ensure all fields are properly filled.");
+            return $this->successResponse(null, false, $validator->errors());
         }
 
         try {

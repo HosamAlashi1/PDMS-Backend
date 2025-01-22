@@ -139,7 +139,7 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->successResponse(null, false, "Validation failed. Please ensure all fields are properly filled.");
+            return $this->successResponse(null, false, $validator->errors());
         }
 
         $password = $this->generateRandomString(8);
@@ -192,7 +192,7 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->successResponse(null, false, "Validation failed. Please ensure all fields are properly filled.");
+            return $this->successResponse(null, false, $validator->errors());
         }
 
         $user = User::where('id', $id)->where('is_delete', 0)->first();
@@ -242,7 +242,7 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->successResponse(null, false, "Validation failed. Please ensure all fields are properly filled.");
+            return $this->successResponse(null, false, $validator->errors());
         }
 
         $user = User::where('id', $id)->where('is_delete', 0)->first();
@@ -315,7 +315,7 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->successResponse(null, false, "Validation failed. Please ensure the passwords match and meet the minimum length requirement.");
+            return $this->successResponse(null, false, $validator->errors());
         }
 
         $user = User::where('id', $id)->where('is_delete', 0)->first();

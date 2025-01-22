@@ -180,7 +180,7 @@ class DevicesController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->successResponse(null, false, "Please upload a valid Excel file with .xlsx format.");
+            return $this->successResponse(null, false, $validator->errors());
         }
 
         $file = $request->file('file');
