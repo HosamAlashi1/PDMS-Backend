@@ -3,7 +3,8 @@
 namespace App\Console;
 
 use App\Jobs\DevicesStatusJob;
-use App\Services\DevicesStatusService;
+use App\Jobs\PeriodicEmailJob;
+use App\Services\DeviceStatusService;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -12,13 +13,17 @@ class Kernel extends ConsoleKernel
     /**
      * Define the application's command schedule.
      */
-    protected function schedule(Schedule $schedule): void
+    protected function schedule(Schedule $schedule)
     {
+        // Run Device Status Check every minute
         $schedule->call(function () {
-            $devicesStatusService = app(DevicesStatusService::class);
-            DevicesStatusJob::dispatch($devicesStatusService);
-        })->everyFiveMinutes();
+            app(DeviceStatusService::class)->execute();
+        })->everyMinute();
+
+        // Run Periodic Email Job every two hours
+        $schedule->job(new PeriodicEmailJob())->everyTwoHours();
     }
+
 
 
     /**
