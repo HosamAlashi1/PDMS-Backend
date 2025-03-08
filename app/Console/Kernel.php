@@ -18,7 +18,7 @@ class Kernel extends ConsoleKernel
         // Run Device Status Check every minute
         $schedule->call(function () {
             app(DeviceStatusService::class)->execute();
-        })->everyMinute();
+        })->everyMinute()->withoutOverlapping();
 
         // Run Periodic Email Job every two hours
         $schedule->job(new PeriodicEmailJob())->everyTwoHours();

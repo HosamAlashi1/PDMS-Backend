@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\DevicesStatus;
 use App\Models\Device;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -12,9 +13,12 @@ class DeviceStatusService
 {
     public function execute()
     {
-        $jobs = Device::all()->map(function ($device) {
-            return new PingDeviceJob($device);
-        })->toArray();
+        $jobs = [];
+        Device::chunk(100, function ($devices) use (&$jobs) {
+            foreach ($devices as $device) {
+                $jobs[] = new PingDeviceJob($device);
+            }
+        });
 
         if (!empty($jobs)) {
             Bus::batch($jobs)->dispatch();
@@ -83,34 +87,42 @@ class DeviceStatusService
 
     private function updateDeviceStatus(Device $device, string $status, int $responseTime)
     {
-        DB::transaction(function () use ($device, $status, $responseTime) {
-            $device->response_time = $responseTime;
-            $device->last_examination_date = now();
+        // Prepare update data
+        $updateData = [
+            'response_time' => $responseTime,
+            'last_examination_date' => now(),
+        ];
 
-            if ($status === 'success') {
-                $this->handleOnlineDevice($device);
-            } else {
-                $this->handleOfflineDevice($device);
-            }
+        if ($status === 'success') {
+            $updateData = array_merge($updateData, $this->getOnlineDeviceData($device));
+        } else {
+            $updateData = array_merge($updateData, $this->getOfflineDeviceData($device));
+        }
 
-            $device->save();
-        });
+        // Perform a single update query without transactions to avoid locking issues
+        DB::table('devices')->where('id', $device->id)->update($updateData);
     }
 
-    private function handleOnlineDevice(Device $device)
+    private function getOnlineDeviceData(Device $device): array
     {
-        $device->online_since = $device->online_since ?: now();
-        $device->offline_since = null;
-        $device->count = 0;
-        $device->status = 'online';
+        return [
+            'online_since' => $device->online_since ?: now(),
+            'offline_since' => null,
+            'count' => 0,
+            'status' => DevicesStatus::Online->value,
+        ];
     }
 
-    private function handleOfflineDevice(Device $device)
+    private function getOfflineDeviceData(Device $device): array
     {
-        $device->offline_since = $device->offline_since ?: now();
-        $device->count++;
+        $offlineSince = $device->offline_since ?: now();
+        $duration = now()->diffInHours($offlineSince);
 
-        $duration = now()->diffInHours($device->offline_since);
-        $device->status = $duration >= 24 ? 'offline_long_term' : 'offline_short_term';
+        return [
+            'offline_since' => $offlineSince,
+            'count' => DB::raw('count + 1'), // Increments count without additional queries
+            'status' => $duration >= 24 ? DevicesStatus::OfflineLongTerm->value : DevicesStatus::OfflineShortTerm->value,
+        ];
     }
+
 }
