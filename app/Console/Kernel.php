@@ -15,13 +15,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // Run Device Status Check every minute
         $schedule->call(function () {
             app(DeviceStatusService::class)->execute();
-        })->everyMinute()->withoutOverlapping();
+        })->name('device_status_check')->everyMinute()->withoutOverlapping();
 
-        // Run Periodic Email Job every two hours
-        $schedule->job(new PeriodicEmailJob())->everyTwoHours();
+        $schedule->job(new PeriodicEmailJob())->name('email_job')->everyTwoHours()->withoutOverlapping();
     }
 
 
