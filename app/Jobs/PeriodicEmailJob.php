@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\ErrorLog;
 use App\Services\EmailService;
 use App\Services\EmailTemplateService;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -31,9 +32,7 @@ class PeriodicEmailJob implements ShouldQueue
     public function handle()
     {
         try {
-            DB::transaction(function () {
-                $this->sendUserEmails();
-            });
+            $this->sendUserEmails();
         } catch (\Exception $ex) {
             Log::error("Periodic Email Job Error: " . $ex->getMessage());
 
@@ -52,21 +51,34 @@ class PeriodicEmailJob implements ShouldQueue
     private function sendUserEmails()
     {
         $users = User::where('receives_emails', true)->where('is_delete', false)->get();
-        $devices = Device::all();
+        $devices = Device::select(['id', 'status'])->get();
 
         foreach ($users as $user) {
-            $lastSent = $user->last_email_sent;
-            $nextSendTime = $lastSent->addHours($user->email_frequency_hours);
+            DB::transaction(function () use ($user, $devices) {
+                try {
+                    // Ensure last_email_sent is a Carbon object
+                    $lastSent = $user->last_email_sent ? Carbon::parse($user->last_email_sent) : now()->subHours($user->email_frequency_hours ?? 24);
 
-            if (now() >= $nextSendTime && $devices->count() > 0) {
-                $emailTitle = "Devices Status Report";
-                $emailBody = $this->buildEmailBody($devices, $user->last_email_sent, $user->email_frequency_hours);
+                    $emailFrequency = $user->email_frequency_hours ?? 24;
+                    $nextSendTime = $lastSent->addHours($emailFrequency);
 
-                $body = $this->emailTemplateService->basicTemplate($user->first_name, $emailTitle, $emailBody);
-                $this->emailService->send($user->company_email, $emailTitle, $body);
+                    if (now() >= $nextSendTime && $devices->count() > 0) {
+                        $emailTitle = "Devices Status Report";
+                        $emailBody = $this->buildEmailBody($devices, $lastSent, $emailFrequency);
+                        $body = $this->emailTemplateService->basicTemplate($user->first_name, $emailTitle, $emailBody);
 
-                $user->update(['last_email_sent' => now()]);
-            }
+                        $this->emailService->send($user->company_email, $emailTitle, $body);
+
+                        $user->update(['last_email_sent' => now()]);
+                    }
+                } catch (\Exception $ex) {
+                    Log::error("Periodic Email Job Error for User ID: {$user->id}", [
+                        'email' => $user->company_email,
+                        'error' => $ex->getMessage(),
+                        'trace' => $ex->getTraceAsString(),
+                    ]);
+                }
+            });
         }
     }
 
