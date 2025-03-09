@@ -13,19 +13,21 @@ class DeviceStatusService
 {
     public function execute()
     {
-        $jobs = [];
-        Device::chunk(100, function ($devices) use (&$jobs) {
+        Device::chunk(100, function ($devices) {
+            $jobs = [];
+
             foreach ($devices as $device) {
                 $jobs[] = new PingDeviceJob($device);
             }
+
+            if (!empty($jobs)) {
+                Bus::batch($jobs)->dispatch();
+            }
         });
 
-        if (!empty($jobs)) {
-            Bus::batch($jobs)->dispatch();
-        } else {
-            Log::info("No jobs to process in batch.");
-        }
+        Log::info("Device processing started.");
     }
+
 
 
     private function processBatchesSequentially(array $batchJobs, int $index = 0)
@@ -120,7 +122,7 @@ class DeviceStatusService
 
         return [
             'offline_since' => $offlineSince,
-            'count' => DB::raw('count + 1'), // Increments count without additional queries
+            'count' => DB::raw("CASE WHEN count < 5 THEN count + 1 ELSE count END"),
             'status' => $duration >= 24 ? DevicesStatus::OfflineLongTerm->value : DevicesStatus::OfflineShortTerm->value,
         ];
     }
