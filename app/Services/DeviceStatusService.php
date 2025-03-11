@@ -95,7 +95,7 @@ class DeviceStatusService
         return [
             'last_examination_date' => now(),
             'offline_since' => now(),
-            'count' => DB::raw("CASE WHEN count < 5 THEN count + 1 ELSE count END"),
+            'count' => DB::raw("CASE WHEN count < 6 THEN count + 1 ELSE count END"),
             'status' => DevicesStatus::OfflineShortTerm->value,
         ];
     }
