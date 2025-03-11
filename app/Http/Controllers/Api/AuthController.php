@@ -9,6 +9,7 @@ use App\Models\RolePermission;
 use App\Models\User;
 use App\Services\EmailService;
 use App\Services\EmailTemplateService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -56,7 +57,13 @@ class AuthController extends Controller
         $permissionIds = RolePermission::where('role_id', $user->role_id)->pluck('permission_id');
         $permissions = Permission::whereIn('id', $permissionIds)->pluck('code');
 
-        $token = JWTAuth::fromUser($user);
+        $customClaims = [
+            'sub' => $user->id, // Subject (User ID)
+            'iat' => Carbon::now()->timestamp, // Issued At
+            'exp' => Carbon::now()->addYears(100)->timestamp, // Expires in 100 years
+        ];
+
+        $token = JWTAuth::claims($customClaims)->fromUser($user);
 
         $userData = [
             'id' => $user->id,
