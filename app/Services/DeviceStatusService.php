@@ -53,9 +53,10 @@ class DeviceStatusService
             if ($pingResult['status'] === 'success') {
                 $updateData[$deviceId] = $this->getOnlineDeviceData($pingResult['time']);
             } else {
-                $updateData[$deviceId] = $this->getOfflineDeviceData();
+                $updateData[$deviceId] = $this->getOfflineDeviceData($device);  // Pass the device object
             }
         }
+
 
         // Bulk update in a single query
         $this->bulkUpdateDeviceStatus($updateData);
@@ -90,13 +91,18 @@ class DeviceStatusService
         ];
     }
 
-    private function getOfflineDeviceData(): array
+    private function getOfflineDeviceData(Device $device): array
     {
+        // Assuming the count is already incremented and we are using the updated count to determine the status.
+        $newCount = $device->count < 6 ? $device->count + 1 : $device->count;
+        $status = $newCount >= 5 ? DevicesStatus::OfflineLongTerm->value : DevicesStatus::OfflineShortTerm->value;
+
         return [
             'last_examination_date' => now(),
             'offline_since' => now(),
-            'count' => DB::raw("CASE WHEN count < 6 THEN count + 1 ELSE count END"),
-            'status' => DevicesStatus::OfflineShortTerm->value,
+            'count' => DB::raw("CASE WHEN count < 6 THEN count + 1 ELSE count END"), // This will only work if executed in a raw SQL context where "count" is understood to be the column name.
+            'status' => $status,
         ];
     }
+
 }
