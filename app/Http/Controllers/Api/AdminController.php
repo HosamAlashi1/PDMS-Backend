@@ -379,12 +379,7 @@ class AdminController extends Controller
             return $this->successResponse(null, false, 'This operation is not permitted!');
         }
 
-        $user->update([
-            'is_logout' => true,
-            'is_delete' => 1,
-            'delete_user_id' => Auth::id(),
-            'delete_date' => now(),
-        ]);
+        $user->delete();
 
         return $this->successResponse(null, true, 'User deleted successfully.');
     }
