@@ -82,36 +82,33 @@ class PeriodicEmailJob implements ShouldQueue
 
     private function buildEmailBody($devices, $lastEmailSent, $emailFrequencyHours)
     {
-        $onlineCount = $devices->where('status', 'Online')->count();
-        $shortOfflineCount = $devices->where('status', 'OfflineShortTerm')->count();
-        $longOfflineCount = $devices->where('status', 'OfflineLongTerm')->count();
+        $onlineCount = $devices->where('status', DevicesStatus::Online)->count();
+        $shortOfflineCount = $devices->where('status', DevicesStatus::OfflineShortTerm)->count();
+        $longOfflineCount = $devices->where('status', DevicesStatus::OfflineLongTerm)->count();
 
-        $shortOfflineDevices = $devices->where('status', 'OfflineShortTerm')->sortByDesc('offline_since');
-        $longOfflineDevices = $devices->where('status', 'OfflineLongTerm')->sortByDesc('offline_since');
+        $shortOfflineDevices = $devices->where('status', DevicesStatus::OfflineShortTerm)->sortByDesc('offline_since');
+        $longOfflineDevices = $devices->where('status', DevicesStatus::OfflineLongTerm)->sortByDesc('offline_since');
 
         $summary = "
-            <p style='font-family: Arial, sans-serif; color: #555; font-size: 14px; margin-bottom: 30px;'>
-                This email provides an overview of the system's current device performance and connectivity, highlighting online and offline statuses.
-            </p>
-            <h4 style='font-family: Arial, sans-serif; color: #333;'>Devices Summary</h4>
-            <table style='width: 100%; text-align: center; border: 1px solid #ddd; border-collapse: collapse; margin-bottom: 30px;'>
-                <tr style='background-color: #f4f4f4;'>
-                    <th style='padding: 10px;'>Online Devices</th>
-                    <th style='padding: 10px;'>Offline (Short-Term)</th>
-                    <th style='padding: 10px;'>Offline (Long-Term)</th>
-                </tr>
-                <tr>
-                    <td style='padding: 10px; color: ".($onlineCount > 0 ? "#4CAF50" : "#333").";'>$onlineCount</td>
-                    <td style='padding: 10px; color: ".($shortOfflineCount > 0 ? "#FF5722" : "#333").";'>$shortOfflineCount</td>
-                    <td style='padding: 10px; color: ".($longOfflineCount > 0 ? "#FF5722" : "#333").";'>$longOfflineCount</td>
-                </tr>
-            </table>
-        ";
+        <p style='font-family: Arial, sans-serif; color: #555; font-size: 14px; margin-bottom: 30px;'>
+            This email provides an overview of the system's current device performance and connectivity, highlighting online and offline statuses.
+        </p>
+        <h4 style='font-family: Arial, sans-serif; color: #333;'>Devices Summary</h4>
+        <table style='width: 100%; text-align: center; border: 1px solid #ddd; border-collapse: collapse; margin-bottom: 30px;'>
+            <tr style='background-color: #f4f4f4;'>
+                <th style='padding: 10px;'>Online Devices</th>
+                <th style='padding: 10px;'>Offline (Short-Term)</th>
+                <th style='padding: 10px;'>Offline (Long-Term)</th>
+            </tr>
+            <tr>
+                <td style='padding: 10px; color: ".($onlineCount > 0 ? "#4CAF50" : "#333").";'>$onlineCount</td>
+                <td style='padding: 10px; color: ".($shortOfflineCount > 0 ? "#FF5722" : "#333").";'>$shortOfflineCount</td>
+                <td style='padding: 10px; color: ".($longOfflineCount > 0 ? "#FF5722" : "#333").";'>$longOfflineCount</td>
+            </tr>
+        </table>
+    ";
 
-        $shortOfflineDetails = $this->generateDeviceTable($shortOfflineDevices, 'Offline Devices Details (Less than 24 Hours)', $lastEmailSent, $emailFrequencyHours);
-        $longOfflineDetails = $this->generateDeviceTable($longOfflineDevices, 'Offline Devices Details (More than 24 Hours)', $lastEmailSent, $emailFrequencyHours);
-
-        return $summary . $shortOfflineDetails . $longOfflineDetails;
+        return $summary;
     }
 
     private function generateDeviceTable($devices, $title, $lastEmailSent, $emailFrequencyHours)
