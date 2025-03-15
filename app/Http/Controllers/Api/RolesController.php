@@ -48,7 +48,7 @@ class RolesController extends Controller
         $data = $roles->map(function ($role) {
             return [
                 'id' => $role->id,
-                'name' => $role->name,
+                'name' => $role->first_name . ' ' . $role->last_name,
                 'insert_user' => $role->insert_user_id ? User::find($role->insert_user_id, ['id', 'first_name', 'last_name', 'image']) : null,
                 'insert_date' => $role->created_at,
                 'update_date' => $role->updated_at,
