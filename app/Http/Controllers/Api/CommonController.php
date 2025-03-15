@@ -12,8 +12,8 @@ class CommonController extends Controller
 
     public function permissions()
     {
-        $parentPermissions = Permission::where('parent_id', 0)->orderBy('order')->get();
-        $allPermissions = Permission::where('parent_id', '!=', 0)->orderBy('order')->get();
+        $parentPermissions = Permission::where('parent_id', null)->orderBy('order')->get();
+        $allPermissions = Permission::where('parent_id', '!=', null)->orderBy('order')->get();
 
         $result = $parentPermissions->map(function ($parent) use ($allPermissions) {
             return [
