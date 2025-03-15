@@ -40,4 +40,8 @@ class Device extends Model
     {
         return $this->hasMany(Attempt::class);
     }
+
+    protected $casts = [
+        'offline_since' => 'datetime',
+    ];
 }
