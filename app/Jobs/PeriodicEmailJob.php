@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\DevicesStatus;
 use App\Models\Device;
 use App\Models\User;
 use App\Models\ErrorLog;
@@ -82,9 +83,9 @@ class PeriodicEmailJob implements ShouldQueue
 
     private function buildEmailBody($devices, $lastEmailSent, $emailFrequencyHours)
     {
-        $onlineCount = $devices->where('status', DevicesStatus::Online)->count();
-        $shortOfflineCount = $devices->where('status', DevicesStatus::OfflineShortTerm)->count();
-        $longOfflineCount = $devices->where('status', DevicesStatus::OfflineLongTerm)->count();
+        $onlineCount = $devices->where('status', DevicesStatus::Online->value)->count();
+        $shortOfflineCount = $devices->where('status', DevicesStatus::OfflineShortTerm->value)->count();
+        $longOfflineCount = $devices->where('status', DevicesStatus::OfflineLongTerm->value)->count();
 
         $shortOfflineDevices = $devices->where('status', DevicesStatus::OfflineShortTerm)->sortByDesc('offline_since');
         $longOfflineDevices = $devices->where('status', DevicesStatus::OfflineLongTerm)->sortByDesc('offline_since');
