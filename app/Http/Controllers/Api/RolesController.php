@@ -50,8 +50,8 @@ class RolesController extends Controller
                 'id' => $role->id,
                 'name' => $role->name,
                 'insert_user' => $role->insert_user_id ? User::find($role->insert_user_id, ['id', 'first_name', 'last_name', 'image']) : null,
-                'insert_date' => $role->insert_date,
-                'update_date' => $role->update_date,
+                'insert_date' => $role->created_at,
+                'update_date' => $role->updated_at,
                 'num_of_members' => User::where('role_id', $role->id)->count(),
             ];
         });
