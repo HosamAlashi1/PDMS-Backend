@@ -39,8 +39,8 @@ Route::middleware('jwt.verify')->group(function () {
     Route::get('dashboard/statistics-by-month', [DashboardController::class, 'detailedStatisticsByMonth']);
 
 
-    Route::get('/permissions', [CommonController::class, 'permissions']);
-    Route::get('/lookups', [CommonController::class, 'lookups']);
+    Route::get('common/permissions', [CommonController::class, 'permissions']);
+    Route::get('common/lookups', [CommonController::class, 'lookups']);
 
     // admins
     Route::prefix('users')->group(function () {
