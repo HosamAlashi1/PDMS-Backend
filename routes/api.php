@@ -62,12 +62,12 @@ Route::middleware('jwt.verify')->group(function () {
     Route::get('group/all', [GroupController::class, 'all']);
     Route::post('group/activate/{id}', [GroupController::class, 'activate']);
     Route::post('group/update/{id}', [GroupController::class, 'update']);
-    Route::delete('group/delete/{id}', [GroupController::class, 'delete']);
+    Route::post('group/delete/{id}', [GroupController::class, 'delete']);
 
     Route::get('devices/list', [DevicesController::class, 'list']);
     Route::post('devices/add', [DevicesController::class, 'add']);
     Route::post('devices/edit/{id}', [DevicesController::class, 'edit']);
-    Route::delete('devices/delete/{id}', [DevicesController::class, 'delete']);
+    Route::post('devices/delete/{id}', [DevicesController::class, 'delete']);
     Route::post('devices/import', [DevicesController::class, 'import']);
 
     Route::prefix('roles')->group(function () {
