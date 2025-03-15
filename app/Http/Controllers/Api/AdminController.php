@@ -67,7 +67,7 @@ class AdminController extends Controller
                 'receives_emails' => $user->receives_emails,
                 'email_frequency_hours' => $user->email_frequency_hours,
                 'role' => Role::find($user->role_id)->name ?? null,
-                'image' => $user->image ? asset($user->image) : asset('images/default-user.png'),
+                'image' => $user->image ? asset($user->image) : asset('images/default-user.jpg'),
             ];
         });
 

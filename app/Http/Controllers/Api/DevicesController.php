@@ -57,7 +57,7 @@ class DevicesController extends Controller
                 'status' => $device->status,
                 'response_time' => $device->response_time,
                 'offline_since' => $device->offline_since,
-                'downtime' => ($device->status === DevicesStatus::OfflineShortTerm->value || $device->status === DevicesStatus::OfflineLongTerm->value) && $device->offline_since
+                'downtime' => ($device->status == DevicesStatus::OfflineShortTerm->value || $device->status == DevicesStatus::OfflineLongTerm->value) && $device->offline_since
                     ? $this->formatDowntime(now()->diff($device->offline_since))
                     : '-',
             ];

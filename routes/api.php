@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\CommonController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\GroupController;
 use App\Http\Controllers\Api\DevicesController;
@@ -37,6 +38,10 @@ Route::middleware('jwt.verify')->group(function () {
     Route::get('dashboard/statistics', [DashboardController::class, 'statistics']);
     Route::get('dashboard/statistics-by-month', [DashboardController::class, 'detailedStatisticsByMonth']);
 
+
+    Route::get('/permissions', [CommonController::class, 'permissions']);
+    Route::get('/lookups', [CommonController::class, 'lookups']);
+
     // admins
     Route::prefix('users')->group(function () {
         Route::get('list', [AdminController::class, 'list']);
@@ -61,7 +66,7 @@ Route::middleware('jwt.verify')->group(function () {
 
     Route::get('devices/list', [DevicesController::class, 'list']);
     Route::post('devices/add', [DevicesController::class, 'add']);
-    Route::post('devices/update/{id}', [DevicesController::class, 'edit']);
+    Route::post('devices/edit/{id}', [DevicesController::class, 'edit']);
     Route::delete('devices/delete/{id}', [DevicesController::class, 'delete']);
     Route::post('devices/import', [DevicesController::class, 'import']);
 
