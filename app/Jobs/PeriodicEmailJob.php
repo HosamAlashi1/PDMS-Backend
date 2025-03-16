@@ -154,7 +154,8 @@ class PeriodicEmailJob implements ShouldQueue
 
     private function isNewDevice($offlineSince, $lastEmailSent, $emailFrequencyHours)
     {
-        return $offlineSince > $lastEmailSent && $offlineSince <= now()->subHours($emailFrequencyHours);
+        $cutoffTime = now()->subHours($emailFrequencyHours);
+        return $offlineSince->gt($lastEmailSent) && $offlineSince->lte($cutoffTime);
     }
 
     private function formatDowntime($duration)

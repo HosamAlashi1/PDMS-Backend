@@ -19,7 +19,7 @@ class Kernel extends ConsoleKernel
             app(DeviceStatusService::class)->execute();
         })->everyMinute();
 
-        $schedule->job(new PeriodicEmailJob())->everyTwoHours();
+        $schedule->job(new PeriodicEmailJob())->everyMinute();
     }
 
 

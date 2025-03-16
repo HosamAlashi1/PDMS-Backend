@@ -96,10 +96,12 @@ class DeviceStatusService
         // Assuming the count is already incremented and we are using the updated count to determine the status.
         $newCount = $device->count < 6 ? $device->count + 1 : $device->count;
         $status = $newCount >= 5 ? DevicesStatus::OfflineLongTerm->value : DevicesStatus::OfflineShortTerm->value;
+        // Update offline_since only if it's null
+        $offlineSince = $device->offline_since ?? now();
 
         return [
             'last_examination_date' => now(),
-            'offline_since' => now(),
+            'offline_since' => $offlineSince,
             'count' => DB::raw("CASE WHEN count < 6 THEN count + 1 ELSE count END"), // This will only work if executed in a raw SQL context where "count" is understood to be the column name.
             'status' => $status,
         ];

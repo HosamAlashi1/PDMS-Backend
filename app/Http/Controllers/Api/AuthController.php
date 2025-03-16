@@ -74,7 +74,7 @@ class AuthController extends Controller
             'company_email' => $user->company_email,
             'phone' => $user->phone,
             'address' => $user->address,
-            'image' => $user->image ? asset($user->image) :asset('images/default-user.png'),
+            'image' => $user->image ? asset($user->image) :asset('images/default-user.jpg'),
         ];
 
         return $this->successResponse([
