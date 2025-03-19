@@ -33,7 +33,7 @@ Route::group([
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
-//Route::get('/test-notification', [NotificationController::class, 'sendUserNotification']);
+Route::get('/test-notification', [NotificationController::class, 'sendUserNotification']);
 
 Route::middleware('jwt.verify')->group(function () {
     // Dashboard
