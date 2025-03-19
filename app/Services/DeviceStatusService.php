@@ -4,12 +4,16 @@ namespace App\Services;
 
 use App\Enums\DevicesStatus;
 use App\Models\Device;
+use App\Models\User;
+use App\Traits\PushNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\Process\Process;
 
 class DeviceStatusService
 {
+
+    use PushNotification;
     public function execute()
     {
         $batchSize = 100;
@@ -91,20 +95,46 @@ class DeviceStatusService
         ];
     }
 
-    private function getOfflineDeviceData(Device $device): array
+    private function updateDeviceStatusAndNotify(Device $device): void
     {
-        // Assuming the count is already incremented and we are using the updated count to determine the status.
         $newCount = $device->count < 6 ? $device->count + 1 : $device->count;
-        $status = $newCount >= 5 ? DevicesStatus::OfflineLongTerm->value : DevicesStatus::OfflineShortTerm->value;
-        // Update offline_since only if it's null
-        $offlineSince = $device->offline_since ?? now();
+        $previousStatus = $device->status;
+        $newStatus = $newCount >= 5 ? DevicesStatus::OfflineLongTerm->value : DevicesStatus::OfflineShortTerm->value;
 
-        return [
+        // Update device data
+        $device->update([
             'last_examination_date' => now(),
-            'offline_since' => $offlineSince,
-            'count' => DB::raw("CASE WHEN count < 6 THEN count + 1 ELSE count END"), // This will only work if executed in a raw SQL context where "count" is understood to be the column name.
-            'status' => $status,
-        ];
+            'offline_since' => $device->offline_since ?? now(),
+            'count' => $newCount,
+            'status' => $newStatus,
+        ]);
+
+        // Check if status changed to Offline Long Term
+        if ($previousStatus !== $newStatus && $newStatus === DevicesStatus::OfflineLongTerm->value) {
+            $this->notifyUsersAboutOfflineStatus($device);
+        }
     }
+
+
+    private function notifyUsersAboutOfflineStatus(Device $device)
+    {
+        // Retrieve all active users with active FCM tokens
+        $users = User::where('is_active', 1)->with(['fcmTokens' => function ($query) {
+            $query->where('is_active', true);
+        }])->get();
+
+        $title = "Device Offline Alert";
+        $message = "Device {$device->ip} has been offline for a long term.";
+
+        foreach ($users as $user) {
+            foreach ($user->fcmTokens as $token) {
+                if ($token->fcm_token) {
+                    $this->sendNotification($token->fcm_token, $title, $message, ['device_id' => $device->id]);
+                }
+            }
+        }
+    }
+
+
 
 }

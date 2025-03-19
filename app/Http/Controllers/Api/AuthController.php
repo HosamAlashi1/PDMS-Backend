@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\FcmToken;
 use App\Models\Forget;
 use App\Models\Permission;
 use App\Models\RolePermission;
@@ -32,14 +33,14 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required',
+            'fcm_token' => 'sometimes|string', // Optionally include an FCM token
         ]);
 
         if ($validator->fails()) {
-            return $this->successResponse(null,false, $validator->errors());
+            return $this->successResponse(null, false, $validator->errors());
         }
 
         $user = User::where('company_email', $request->email)->where('is_delete', 0)->first();
@@ -54,13 +55,21 @@ class AuthController extends Controller
 
         $user->update(['is_logout' => false]);
 
+        // Handle the FCM token if provided
+        if ($request->has('fcm_token') && $request->fcm_token) {
+            $fcmToken = FcmToken::updateOrCreate(
+                ['user_id' => $user->id, 'fcm_token' => $request->fcm_token],
+                ['is_active' => true]
+            );
+        }
+
         $permissionIds = RolePermission::where('role_id', $user->role_id)->pluck('permission_id');
         $permissions = Permission::whereIn('id', $permissionIds)->pluck('code');
 
         $customClaims = [
-            'sub' => $user->id, // Subject (User ID)
-            'iat' => Carbon::now()->timestamp, // Issued At
-            'exp' => Carbon::now()->addYears(100)->timestamp, // Expires in 100 years
+            'sub' => $user->id,
+            'iat' => Carbon::now()->timestamp,
+            'exp' => Carbon::now()->addYears(100)->timestamp,
         ];
 
         $token = JWTAuth::claims($customClaims)->fromUser($user);
@@ -74,13 +83,14 @@ class AuthController extends Controller
             'company_email' => $user->company_email,
             'phone' => $user->phone,
             'address' => $user->address,
-            'image' => $user->image ? asset($user->image) :asset('images/default-user.jpg'),
+            'image' => $user->image ? asset($user->image) : asset('images/default-user.jpg'),
         ];
 
         return $this->successResponse([
             'user' => $userData,
             'token' => $token,
             'permissions' => $permissions,
+            'fcm_token' => $request->fcm_token ?? null, // Optionally return the FCM token
         ], true, 'Login successfully.');
     }
 

@@ -40,6 +40,7 @@ class User extends Authenticatable implements JWTSubject
         'update_user_id',
         'delete_user_id',
         'delete_date',
+        'fcm_token',
     ];
 
     protected $hidden = [
@@ -98,4 +99,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Forget::class);
     }
+
+    public function fcmTokens()
+    {
+        return $this->hasMany(FcmToken::class);
+    }
+
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DevicesController;
 use App\Http\Controllers\Api\MapController;
 use App\Http\Controllers\Api\RolesController;
 use App\Http\Controllers\Api\SettingsController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
@@ -32,6 +33,7 @@ Route::group([
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
+//Route::get('/test-notification', [NotificationController::class, 'sendUserNotification']);
 
 Route::middleware('jwt.verify')->group(function () {
     // Dashboard
