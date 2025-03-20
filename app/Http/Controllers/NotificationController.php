@@ -9,11 +9,7 @@ use Illuminate\Support\Facades\Validator;
 
 class NotificationController extends Controller
 {
-    use PushNotification;
 
-    use Illuminate\Http\Request;
-    use App\Models\User;
-    use Illuminate\Support\Facades\Validator;
 
     public function sendUserNotification(Request $request)
     {
