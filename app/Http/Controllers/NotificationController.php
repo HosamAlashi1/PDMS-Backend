@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Validator;
 class NotificationController extends Controller
 {
 
-
+    use PushNotification;
     public function sendUserNotification(Request $request)
     {
         $validated = $request->validate([
