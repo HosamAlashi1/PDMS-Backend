@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Traits\PushNotification;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Validator;
 
 class NotificationController extends Controller
 {
@@ -12,11 +13,15 @@ class NotificationController extends Controller
 
     public function sendUserNotification(Request $request)
     {
-        $request->validate([
+
+        $validator = Validator::make($request->all(), [
             'user_id' => 'required|exists:users,id',
             'title' => 'required|string',
             'message' => 'required|string',
         ]);
+
+
+        // Now you can use $validatedData['user_id'], etc., if you need to.
 
         $user = User::findOrFail($request->user_id);
         $token = $user->fcm_token;
@@ -34,5 +39,6 @@ class NotificationController extends Controller
 
         return response()->json(['success' => false, 'message' => 'Failed to send notification.']);
     }
+
 
 }
