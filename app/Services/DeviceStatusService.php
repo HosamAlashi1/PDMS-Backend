@@ -17,7 +17,7 @@ class DeviceStatusService
     public function execute()
     {
         $batchSize = 100;
-        $devices = Device::select(['id', 'ip_address', 'online_since', 'offline_since', 'count', 'status'])->cursor();
+        $devices = Device::select(['id', 'ip_address', 'online_since' ,'response_time' , 'longitude' , 'latitude' ,'name' ,'line_code', 'device_type', 'offline_since', 'count', 'status'])->cursor();
 
         $deviceChunks = [];
         foreach ($devices as $device) {
@@ -57,7 +57,7 @@ class DeviceStatusService
             if ($pingResult['status'] === 'success') {
                 $updateData[$deviceId] = $this->getOnlineDeviceData($pingResult['time']);
             } else {
-                $updateData[$deviceId] = $this->getOfflineDeviceData($device);  // Pass the device object
+                $updateData[$deviceId] = $this->updateDeviceStatusAndNotify($device);  // Pass the device object
             }
         }
 
@@ -95,25 +95,33 @@ class DeviceStatusService
         ];
     }
 
-    private function updateDeviceStatusAndNotify(Device $device): void
+    private function updateDeviceStatusAndNotify(Device $device): array
     {
         $newCount = $device->count < 6 ? $device->count + 1 : $device->count;
         $previousStatus = $device->status;
         $newStatus = $newCount >= 5 ? DevicesStatus::OfflineLongTerm->value : DevicesStatus::OfflineShortTerm->value;
 
-        // Update device data
-        $device->update([
+//        // Update device data
+//        $device->update([
+//            'last_examination_date' => now(),
+//            'offline_since' => $device->offline_since ?? now(),
+//            'count' => $newCount,
+//            'status' => $newStatus,
+//        ]);
+
+        // Check if status changed to Offline Long Term
+        if ($previousStatus != $newStatus && $newStatus == DevicesStatus::OfflineLongTerm->value) {
+            $this->notifyUsersAboutOfflineStatus($device);
+        }
+
+        return [
             'last_examination_date' => now(),
             'offline_since' => $device->offline_since ?? now(),
             'count' => $newCount,
             'status' => $newStatus,
-        ]);
-
-        // Check if status changed to Offline Long Term
-        if ($previousStatus !== $newStatus && $newStatus === DevicesStatus::OfflineLongTerm->value) {
-            $this->notifyUsersAboutOfflineStatus($device);
-        }
+        ];
     }
+
 
 
     private function notifyUsersAboutOfflineStatus(Device $device)
@@ -124,16 +132,46 @@ class DeviceStatusService
         }])->get();
 
         $title = "Device Offline Alert";
-        $message = "Device {$device->ip} has been offline for a long term.";
+        $message = "Device {$device->name} (IP: {$device->ip_address}) has been offline for a long time.";
+
+        $deviceData = [
+            'device_id' => $device->id,
+            'name' => $device->name,
+            'ip_address' => $device->ip_address,
+            'line_code' => $device->line_code,
+            'latitude' => $device->latitude,
+            'longitude' => $device->longitude,
+            'device_type' => $device->device_type,
+            'status' => $device->status,
+            'response_time' => $device->response_time,
+            'offline_since' => $device->offline_since ? $device->offline_since->toDateTimeString() : null,
+            'downtime' => ($device->status == DevicesStatus::OfflineShortTerm->value || $device->status == DevicesStatus::OfflineLongTerm->value) && $device->offline_since
+                ? $this->formatDowntime(now()->diff($device->offline_since))
+                : '-',  // Calculate downtime if device is offline
+        ];
 
         foreach ($users as $user) {
             foreach ($user->fcmTokens as $token) {
                 if ($token->fcm_token) {
-                    $this->sendNotification($token->fcm_token, $title, $message, ['device_id' => $device->id]);
+                    $this->sendNotification($token->fcm_token, $title, $message, $deviceData);
                 }
             }
         }
     }
+
+    private function formatDowntime($duration)
+    {
+        if ($duration->days > 0) {
+            return "{$duration->days} d, {$duration->h} h";
+        }
+
+        if ($duration->h > 0) {
+            return "{$duration->h} h, {$duration->i} m";
+        }
+
+        return "{$duration->i} m";
+    }
+
 
 
 

@@ -32,10 +32,16 @@ class NotificationController extends Controller
         foreach ($user->fcmTokens as $token) {
             if ($token->is_active) {
                 $result = $this->sendNotification($token->fcm_token, $validated['title'], $validated['message'], $data);
-                $allResults[] = $result;
-                $success |= !empty($result) && $result['success']; // Adjust according to actual API response structure
+                if (is_array($result) && array_key_exists('success', $result)) {
+                    $allResults[] = $result;
+                    $success |= $result['success'];
+                } else {
+                    // Handle cases where result is not as expected
+                    $allResults[] = ['success' => false, 'error' => 'Unexpected result format'];
+                }
             }
         }
+
 
         if ($success) {
             return response()->json(['success' => true, 'message' => 'Notifications sent successfully.', 'results' => $allResults]);

@@ -14,31 +14,28 @@ trait PushNotification {
             'message' => [
                 'notification' => [
                     'title' => $title,
-                    'body' => $body,
-                    'sound' => 'default' // Optional: for making sound on notification arrival
+                    'body' => $body
                 ],
-                'data' => $data,
                 'token' => $token,
                 'android' => [
-                    'priority' => 'high'
+                    'notification' => [
+                        'sound' => 'default'
+                    ]
                 ],
                 'apns' => [
-                    'headers' => [
-                        'apns-priority' => '10'
-                    ],
                     'payload' => [
                         'aps' => [
                             'alert' => [
                                 'title' => $title,
                                 'body' => $body,
                             ],
-                            'badge' => 1,
                             'sound' => 'default'
                         ]
                     ]
                 ]
-            ],
+            ]
         ];
+
 
         try {
             $response = Http::withHeaders([
@@ -46,7 +43,12 @@ trait PushNotification {
                 'Content-Type' => 'application/json',
             ])->post($fcmUrl, $notification);
 
-            return $response->json();
+            // Assuming $response->successful() checks HTTP status like 200
+            if ($response->successful()) {
+                return ['success' => true, 'data' => $response->json()];
+            } else {
+                return ['success' => false, 'error' => $response->body()];
+            }
         } catch (Exception $e) {
             Log::error("Error sending push notification to token: {$token} - " . $e->getMessage());
             return false;
