@@ -32,10 +32,10 @@ trait PushNotification {
                             'sound' => 'default'
                         ]
                     ]
-                ]
+                ],
+                'data' => $data  // Ensuring the 'data' field is part of the payload
             ]
         ];
-
 
         try {
             $response = Http::withHeaders([
@@ -43,7 +43,6 @@ trait PushNotification {
                 'Content-Type' => 'application/json',
             ])->post($fcmUrl, $notification);
 
-            // Assuming $response->successful() checks HTTP status like 200
             if ($response->successful()) {
                 return ['success' => true, 'data' => $response->json()];
             } else {
