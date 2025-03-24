@@ -56,20 +56,28 @@ class AuthController extends Controller
         $user->update(['is_logout' => false]);
 
         // Handle the FCM token if provided
-        if ($request->has('fcm_token') && $request->fcm_token) {
-            $fcmToken = FcmToken::updateOrCreate(
-                ['user_id' => $user->id, 'fcm_token' => $request->fcm_token],
-                ['is_active' => true]
-            );
+        if ($request->filled('fcm_token')) {
+            // Check if the token already exists for this user
+            $existingToken = FcmToken::where('user_id', $user->id)
+                ->where('fcm_token', $request->fcm_token)
+                ->first();
+
+            if (!$existingToken) {
+                FcmToken::create([
+                    'user_id' => $user->id,
+                    'fcm_token' => $request->fcm_token,
+                    'is_active' => true
+                ]);
+            }
         }
 
         $permissionIds = RolePermission::where('role_id', $user->role_id)->pluck('permission_id');
         $permissions = Permission::whereIn('id', $permissionIds)->pluck('code');
 
         $customClaims = [
-            'sub' => $user->id,
-            'iat' => Carbon::now()->timestamp,
-            'exp' => Carbon::now()->addYears(100)->timestamp,
+            'sub' => $user->id, // Subject (User ID)
+            'iat' => Carbon::now()->timestamp, // Issued At
+            'exp' => Carbon::now()->addYears(100)->timestamp, // Expires in 100 years
         ];
 
         $token = JWTAuth::claims($customClaims)->fromUser($user);
@@ -93,6 +101,7 @@ class AuthController extends Controller
             'fcm_token' => $request->fcm_token ?? null, // Optionally return the FCM token
         ], true, 'Login successfully.');
     }
+
 
     public function forgetPassword(Request $request)
     {

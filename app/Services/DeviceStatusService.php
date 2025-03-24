@@ -134,26 +134,30 @@ class DeviceStatusService
         $title = "Device Offline Alert";
         $message = "Device {$device->name} (IP: {$device->ip_address}) has been offline for a long time.";
 
-        $deviceData = [
-            'device_id' => $device->id,
-            'name' => $device->name,
-            'ip_address' => $device->ip_address,
-            'line_code' => $device->line_code,
-            'latitude' => $device->latitude,
-            'longitude' => $device->longitude,
-            'device_type' => $device->device_type,
-            'status' => $device->status,
-            'response_time' => $device->response_time,
+
+        $data = [
+            'device_id' => (string) $device->id,
+            'name' => (string) $device->name,
+            'ip_address' => (string) $device->ip_address,
+            'line_code' => (string) $device->line_code,
+            'latitude' => (string) $device->latitude,
+            'longitude' => (string) $device->longitude,
+            'device_type' => (string) $device->device_type,
+            'status' => (string) $device->status,
+            'response_time' => (string) $device->response_time,
             'offline_since' => $device->offline_since ? $device->offline_since->toDateTimeString() : null,
-            'downtime' => ($device->status == DevicesStatus::OfflineShortTerm->value || $device->status == DevicesStatus::OfflineLongTerm->value) && $device->offline_since
+            'downtime' => (string) (($device->status == DevicesStatus::OfflineShortTerm->value || $device->status == DevicesStatus::OfflineLongTerm->value) && $device->offline_since
                 ? $this->formatDowntime(now()->diff($device->offline_since))
-                : '-',  // Calculate downtime if device is offline
+                : '-'),  // Calculate downtime if device is offline
         ];
+
+// Ensure 'offline_since' is also a string, even when it's null (transform null to an empty string)
+        $data['offline_since'] = (string) $data['offline_since'];
 
         foreach ($users as $user) {
             foreach ($user->fcmTokens as $token) {
                 if ($token->fcm_token) {
-                    $this->sendNotification($token->fcm_token, $title, $message, $deviceData);
+                    $this->sendNotification($token->fcm_token, $title, $message, $data);
                 }
             }
         }

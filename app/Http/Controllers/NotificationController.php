@@ -25,7 +25,7 @@ class NotificationController extends Controller
             return response()->json(['success' => false, 'message' => 'No FCM tokens found for user.']);
         }
 
-        $data = ['info' => 'Test data'];  // Additional data you might want to include
+        $data = ['info' => '2'];  // Additional data you might want to include
         $allResults = [];
         $success = false;
 
