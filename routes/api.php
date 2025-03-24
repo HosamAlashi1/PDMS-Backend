@@ -28,6 +28,7 @@ Route::group([
     'prefix' => 'auth'
 ], function () {
     Route::post('/login', [AuthController::class, 'login'])->name('login');
+    Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::post('/change-password', [AuthController::class, 'changePassword'])->middleware('jwt.verify');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

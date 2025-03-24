@@ -156,11 +156,12 @@ class DeviceStatusService
 
         foreach ($users as $user) {
             foreach ($user->fcmTokens as $token) {
-                if ($token->fcm_token) {
+                if ($token->fcm_token && $token->is_active) { // Redundant check, already filtered in query
                     $this->sendNotification($token->fcm_token, $title, $message, $data);
                 }
             }
         }
+
     }
 
     private function formatDowntime($duration)

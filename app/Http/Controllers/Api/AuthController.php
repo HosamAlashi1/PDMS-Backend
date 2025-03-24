@@ -11,9 +11,12 @@ use App\Models\User;
 use App\Services\EmailService;
 use App\Services\EmailTemplateService;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Traits\ApiResponseTrait;
@@ -36,7 +39,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required',
-            'fcm_token' => 'sometimes|string', // Optionally include an FCM token
+            'fcm_token' => 'sometimes|string',
         ]);
 
         if ($validator->fails()) {
@@ -57,27 +60,17 @@ class AuthController extends Controller
 
         // Handle the FCM token if provided
         if ($request->filled('fcm_token')) {
-            // Check if the token already exists for this user
-            $existingToken = FcmToken::where('user_id', $user->id)
-                ->where('fcm_token', $request->fcm_token)
-                ->first();
-
-            if (!$existingToken) {
-                FcmToken::create([
-                    'user_id' => $user->id,
-                    'fcm_token' => $request->fcm_token,
-                    'is_active' => true
-                ]);
-            }
+            $this->updateOrCreateToken($user->id, $request->input('device_id', null), $request->fcm_token);
         }
 
+        // Gather permissions and other user details
         $permissionIds = RolePermission::where('role_id', $user->role_id)->pluck('permission_id');
         $permissions = Permission::whereIn('id', $permissionIds)->pluck('code');
 
         $customClaims = [
-            'sub' => $user->id, // Subject (User ID)
-            'iat' => Carbon::now()->timestamp, // Issued At
-            'exp' => Carbon::now()->addYears(100)->timestamp, // Expires in 100 years
+            'sub' => $user->id,
+            'iat' => Carbon::now()->timestamp,
+            'exp' => Carbon::now()->addYears(100)->timestamp,
         ];
 
         $token = JWTAuth::claims($customClaims)->fromUser($user);
@@ -102,6 +95,28 @@ class AuthController extends Controller
         ], true, 'Login successfully.');
     }
 
+
+    public function updateOrCreateToken($userId, $deviceId, $fcmToken)
+    {
+        try {
+            $fcmTokenRecord = FcmToken::updateOrCreate(
+                [
+                    'user_id' => $userId,
+                    'device_id' => $deviceId,  // Assuming 'device_id' is part of your identifying conditions
+                ],
+                [
+                    'token' => $fcmToken,
+                    'is_active' => true,  // Assuming you want to set it active regardless of create or update
+                ]
+            );
+
+            return $fcmTokenRecord;  // Optionally return the token record
+        } catch (QueryException $exception) {
+            // Handle exception, possibly logging and returning an error message
+            Log::error("Failed to update or create FCM token: " . $exception->getMessage());
+            return null;  // Depending on your error handling strategy, you might want to return an error code or message here
+        }
+    }
 
     public function forgetPassword(Request $request)
     {
@@ -185,4 +200,52 @@ class AuthController extends Controller
 
         return $this->successResponse(null, true, 'Password changed successfully.');
     }
+
+
+    public function logout(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'device_id' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->successResponse(null, false, $validator->errors());
+        }
+
+        // Use the authenticated user directly
+        $user = Auth::user();
+
+        if (!$user) {
+            return $this->errorResponse(404, __('User does not exist'));
+        }
+
+        // Start a transaction to ensure all database changes are applied together
+        DB::beginTransaction();
+
+        try {
+            $tokens = $user->fcmTokens()
+                ->where('device_id', $request->device_id)
+                ->where('is_active', true)
+                ->get();
+
+            foreach ($tokens as $token) {
+                $token->is_active = false;
+                $token->expired_at = now();  // Using 'now()' helper for current timestamp
+                $token->save();
+            }
+
+            // Commit the transaction
+            DB::commit();
+
+            return $this->successResponse([
+                'tokens_deactivated' => $tokens->count()  // Provide count of deactivated tokens
+            ], true, __('Logout successful'));
+        } catch (\Exception $e) {
+            // Rollback the transaction on error
+            DB::rollBack();
+            return $this->errorResponse(500, $e->getMessage());
+        }
+    }
+
+
 }
