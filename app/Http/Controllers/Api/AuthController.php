@@ -56,8 +56,6 @@ class AuthController extends Controller
             return $this->successResponse(null, false, 'Please contact system administrator!');
         }
 
-        $user->update(['is_logout' => false]);
-
         // Handle the FCM token if provided
         if ($request->filled('fcm_token')) {
             $this->updateOrCreateToken($user->id, $request->input('device_id', null), $request->fcm_token);

@@ -31,7 +31,7 @@ Route::group([
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::post('/change-password', [AuthController::class, 'changePassword'])->middleware('jwt.verify');
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('jwt.verify');
 });
 
 Route::get('/test-notification', [NotificationController::class, 'sendUserNotification']);
