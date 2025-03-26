@@ -96,23 +96,20 @@ class AuthController extends Controller
 
     public function updateOrCreateToken($userId, $deviceId, $fcmToken)
     {
-        try {
-            $fcmTokenRecord = FcmToken::updateOrCreate(
-                [
-                    'user_id' => $userId,
-                    'device_id' => $deviceId,  // Assuming 'device_id' is part of your identifying conditions
-                ],
-                [
-                    'token' => $fcmToken,
-                    'is_active' => true,  // Assuming you want to set it active regardless of create or update
-                ]
-            );
+        $fcmTokenRecord = FcmToken::where('user_id', $userId)
+            ->where('device_id', $deviceId)
+            ->first();
 
-            return $fcmTokenRecord;  // Optionally return the token record
-        } catch (QueryException $exception) {
-            // Handle exception, possibly logging and returning an error message
-            Log::error("Failed to update or create FCM token: " . $exception->getMessage());
-            return null;  // Depending on your error handling strategy, you might want to return an error code or message here
+        if (!$fcmTokenRecord) {
+            $fcmTokenRecord = new FcmToken();
+            $fcmTokenRecord->fcm_token = $fcmToken;
+            $fcmTokenRecord->device_id = $deviceId;
+            $fcmTokenRecord->user_id = $userId;
+            $fcmTokenRecord->save();
+        } else {
+            $fcmTokenRecord->fcm_token = $fcmToken;
+            $fcmTokenRecord->is_active = true;
+            $fcmTokenRecord->save();
         }
     }
 
