@@ -225,7 +225,6 @@ class AuthController extends Controller
 
             foreach ($tokens as $token) {
                 $token->is_active = false;
-                $token->expired_at = now();  // Using 'now()' helper for current timestamp
                 $token->save();
             }
 
